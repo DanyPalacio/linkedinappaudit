@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Profile Audit - Análisis IA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo" onclick="resetApp(); return false;">
+                    <div class="logo-icon">LA</div>
+                    <span>LinkedIn Audit</span>
+                </a>
+                <button class="btn-reset" id="resetBtn" onclick="resetApp()" style="display: none;">
+                    🔄 Nueva Auditoría
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Landing Section -->
+    <section class="landing-section" id="landingSection">
+        <div class="container">
+            <div class="landing-content">
+                <h1 class="landing-title">
+                    Optimiza tu <span class="highlight">Marca Personal</span> en LinkedIn
+                </h1>
+                <p class="landing-subtitle">
+                    Análisis profesional con Inteligencia Artificial. Obtén insights accionables, 
+                    detecta oportunidades y recibe un plan personalizado de personal branding.
+                </p>
+
+                <div class="input-group">
+                    <label class="input-label">URL de tu perfil de LinkedIn</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="url" 
+                            class="input-field" 
+                            placeholder="https://www.linkedin.com/in/tu-perfil"
+                            id="profileUrl"
+                        >
+                        <button class="btn btn-primary" onclick="analyzeProfile()">
+                            <span>🔍</span>
+                            Analizar Perfil
+                        </button>
+                    </div>
+                </div>
+
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">📊</div>
+                        <div class="feature-title">Score Detallado</div>
+                        <div class="feature-desc">5 categorías evaluadas con precisión</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🎯</div>
+                        <div class="feature-title">Insights IA</div>
+                        <div class="feature-desc">Análisis profundo con Claude & GPT-4</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🚀</div>
+                        <div class="feature-title">Plan de Acción</div>
+                        <div class="feature-desc">Roadmap de 90 días priorizado</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">💬</div>
+                        <div class="feature-title">Chat IA</div>
+                        <div class="feature-desc">Consultas personalizadas en tiempo real</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Loading State -->
+    <div class="loading" id="loadingSection">
+        <div class="container">
+            <div class="spinner"></div>
+            <h3>Analizando tu perfil con IA...</h3>
+            <p class="loading-steps" id="loadingSteps">Conectando con LinkedIn...</p>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <section class="results-section" id="resultsSection">
+        <div class="container">
+            <!-- Profile Header -->
+            <div class="results-header">
+                <div class="container">
+                    <div class="profile-summary">
+                        <img src="" alt="Foto de perfil" class="profile-avatar" id="profilePhoto">
+                        <div class="profile-info">
+                            <h2 id="profileName">Cargando...</h2>
+                            <div class="profile-headline" id="profileHeadline">...</div>
+                            <div class="profile-industry">
+                                🏢 Industria detectada: <strong id="profileIndustry">...</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score & Radar Chart -->
+            <div class="score-grid">
+                <div class="card score-card">
+                    <h3 class="card-title">Score General</h3>
+                    <div class="score-display">
+                        <div class="score-circle-container">
+                            <canvas id="scoreCircle" width="180" height="180"></canvas>
+                            <div class="score-overlay">
+                                <span class="score-number" id="totalScore">0</span>
+                                <span class="score-max">/100</span>
+                            </div>
+                        </div>
+                        <span class="score-label" id="scoreLevel">Evaluando...</span>
+                        <div class="score-description" id="scoreDescription">
+                            Analizando tu perfil...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Análisis por Categoría</h3>
+                    <canvas id="radarChart" class="radar-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Metrics Dashboard -->
+            <div class="metrics-grid" id="metricsGrid">
+                <!-- Se llenan dinámicamente -->
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <div class="tab-list">
+                    <button class="tab-button active" onclick="switchTab('resumen')">📋 Resumen Ejecutivo</button>
+                    <button class="tab-button" onclick="switchTab('analisis')">🔍 Análisis Detallado</button>
+                    <button class="tab-button" onclick="switchTab('oportunidades')">💎 Oportunidades</button>
+                    <button class="tab-button" onclick="switchTab('plan')">🎯 Plan de Acción</button>
+                    <button class="tab-button" onclick="switchTab('chat')">💬 Chat IA</button>
+                </div>
+
+                <!-- Tab: Resumen -->
+                <div id="tab-resumen" class="tab-content active">
+                    <div class="card">
+                        <h3 class="card-title">Resumen Ejecutivo</h3>
+                        <div id="resumenContent">Cargando análisis...</div>
+                    </div>
+                </div>
+
+                <!-- Tab: Análisis Detallado -->
+                <div id="tab-analisis" class="tab-content">
+                    <div id="analisisContent">Cargando análisis...</div>
+                </div>
+
+                <!-- Tab: Oportunidades -->
+                <div id="tab-oportunidades" class="tab-content">
+                    <div class="card">
+                        <h3 class="card-title">💎 Oportunidades de Mejora Priorizadas</h3>
+                        <div id="oportunidadesContent">Cargando oportunidades...</div>
+                    </div>
+                </div>
+
+                <!-- Tab: Plan de Acción -->
+                <div id="tab-plan" class="tab-content">
+                    <div class="card">
+                        <h3 class="card-title">🎯 Plan de Acción de 90 Días</h3>
+                        <div id="planContent">Cargando plan...</div>
+                    </div>
+                </div>
+
+                <!-- Tab: Chat IA -->
+                <div id="tab-chat" class="tab-content">
+                    <div class="chat-container">
+                        <div class="chat-header">
+                            <div class="chat-avatar">🤖</div>
+                            <div>
+                                <div class="chat-title">Asistente de Personal Branding</div>
+                                <div class="chat-status">● En línea</div>
+                            </div>
+                        </div>
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="chat-message">
+                                <div class="chat-message-avatar">🤖</div>
+                                <div class="chat-message-content">
+                                    ¡Hola! He analizado tu perfil en detalle. 
+                                    ¿Tienes alguna pregunta sobre el análisis, las oportunidades o el plan de acción?
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input-container">
+                            <div class="chat-input-wrapper">
+                                <input 
+                                    type="text" 
+                                    class="chat-input" 
+                                    placeholder="Escribe tu pregunta aquí..."
+                                    id="chatInput"
+                                    onkeypress="if(event.key==='Enter') sendMessage()"
+                                >
+                                <button class="btn btn-primary" onclick="sendMessage()">Enviar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="action-bar">
+                <button class="btn btn-primary" onclick="exportReport()">
+                    📄 Exportar Reporte HTML
+                </button>
+                <button class="btn btn-secondary" onclick="resetApp()">
+                    🔄 Analizar Otro Perfil
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
