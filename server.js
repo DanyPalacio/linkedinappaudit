@@ -23,8 +23,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// CORS proxy para LinkedIn
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+// CORS proxy para LinkedIn (con fallback)
+const CORS_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://api.codetabs.com/v1/proxy?quest='
+];
 
 /**
  * Extract profile data from LinkedIn HTML
@@ -235,27 +239,46 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'Debe ser una URL válida de LinkedIn' });
     }
     
-    console.log('Fetching profile:', profileUrl);
+    console.log('🔍 Fetching profile:', profileUrl);
     
-    // Fetch del HTML del perfil usando proxy CORS
-    const response = await axios.get(`${CORS_PROXY}${encodeURIComponent(profileUrl)}`, {
-      timeout: 15000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    // Intentar con múltiples proxies CORS
+    let response = null;
+    let lastError = null;
+    
+    for (const proxy of CORS_PROXIES) {
+      try {
+        console.log(`   Trying proxy: ${proxy.substring(0, 30)}...`);
+        response = await axios.get(`${proxy}${encodeURIComponent(profileUrl)}`, {
+          timeout: 20000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        console.log('   ✅ Proxy worked!');
+        break;
+      } catch (err) {
+        console.log(`   ❌ Proxy failed: ${err.message}`);
+        lastError = err;
+        continue;
       }
-    });
+    }
     
-    console.log('Profile fetched successfully');
+    if (!response) {
+      throw new Error(`All proxies failed. Last error: ${lastError?.message || 'Unknown'}`);
+    }
+    
+    console.log('✅ Profile fetched successfully');
     
     // Extraer datos del perfil
     const profileData = extractProfileData(response.data, profileUrl);
     
-    console.log('Profile data extracted:', profileData.name);
+    console.log('✅ Profile data extracted:', profileData.name);
     
     // Analizar con Claude
+    console.log('🤖 Analyzing with Claude...');
     const analysis = await analyzeWithClaude(profileData);
     
-    console.log('Analysis completed:', analysis.scores.total);
+    console.log('✅ Analysis completed - Score:', analysis.scores.total);
     
     // Combinar datos del perfil con análisis
     const result = {
@@ -267,7 +290,8 @@ app.post('/api/analyze', async (req, res) => {
     res.json(result);
     
   } catch (error) {
-    console.error('Error analyzing profile:', error.message);
+    console.error('❌ ERROR analyzing profile:', error.message);
+    console.error('Stack:', error.stack);
     res.status(500).json({ 
       error: 'Error al analizar el perfil',
       details: error.message 
