@@ -357,15 +357,17 @@ function renderMetrics(analisis) {
     
     metricsGrid.innerHTML = categories.map(cat => {
         const score = analisis[cat.key].score;
+        const percentage = Math.round((score / 20) * 100);
         return `
             <div class="metric-card">
                 <div class="metric-header">
                     <span class="metric-label">${cat.label}</span>
                     <div class="metric-icon">${cat.icon}</div>
                 </div>
-                <div class="metric-value">${score}<span style="font-size: 1rem; color: var(--color-text-secondary);">/100</span></div>
+                <div class="metric-value">${score}<span style="font-size: 1rem; color: var(--color-text-secondary);">/20</span></div>
+                <div style="font-size: 0.875rem; color: var(--color-text-tertiary); margin-bottom: 0.5rem;">${percentage}%</div>
                 <div class="metric-progress">
-                    <div class="metric-progress-bar" style="width: ${score}%"></div>
+                    <div class="metric-progress-bar" style="width: ${percentage}%"></div>
                 </div>
             </div>
         `;
@@ -514,8 +516,18 @@ async function sendMessage() {
     addChatMessage('user', message);
     input.value = '';
 
-    // Show typing indicator
-    const typingId = addChatMessage('assistant', '💭 Pensando...');
+    // Show thinking animation
+    const thinkingId = addChatMessage('assistant', `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div class="thinking-dots">
+                <span>💭</span>
+                <span class="dot">.</span>
+                <span class="dot">.</span>
+                <span class="dot">.</span>
+            </div>
+            <span>Pensando</span>
+        </div>
+    `);
 
     try {
         const response = await fetch(`${API_BASE}/api/chat`, {
@@ -538,17 +550,67 @@ async function sendMessage() {
 
         const data = await response.json();
         
-        // Remove typing indicator
-        document.getElementById(typingId).remove();
+        // Remove thinking indicator
+        document.getElementById(thinkingId).remove();
+        
+        // Format response into table/structured format
+        const formattedReply = formatChatResponse(data.reply);
         
         // Add AI response
-        addChatMessage('assistant', data.reply);
+        addChatMessage('assistant', formattedReply);
 
     } catch (error) {
-        document.getElementById(typingId).remove();
+        document.getElementById(thinkingId).remove();
         addChatMessage('assistant', 'Lo siento, ocurrió un error. Por favor intenta de nuevo.');
         console.error('Chat error:', error);
     }
+}
+
+/**
+ * Format chat response into structured format
+ */
+function formatChatResponse(text) {
+    // Check if response contains numbered list (recommendations)
+    const hasNumberedList = /\d+\.\s/.test(text);
+    const hasBulletList = /[•\-\*]\s/.test(text);
+    
+    if (hasNumberedList || hasBulletList) {
+        // Parse into structured format
+        const lines = text.split('\n').filter(l => l.trim());
+        let formatted = '<div class="chat-recommendations">';
+        
+        lines.forEach(line => {
+            line = line.trim();
+            
+            // Main headers (bold text followed by colon)
+            if (line.match(/^\*\*.+\*\*:?/)) {
+                formatted += `<div class="rec-header">${line.replace(/\*\*/g, '')}</div>`;
+            }
+            // Numbered items
+            else if (line.match(/^\d+\./)) {
+                const cleanLine = line.replace(/^\d+\.\s*/, '').replace(/\*\*/g, '<strong>').replace(/\*\*/g, '</strong>');
+                formatted += `<div class="rec-item">
+                    <span class="rec-number">${line.match(/^\d+/)[0]}</span>
+                    <span class="rec-text">${cleanLine}</span>
+                </div>`;
+            }
+            // Bullet items
+            else if (line.match(/^[•\-\*]\s/)) {
+                const cleanLine = line.replace(/^[•\-\*]\s*/, '');
+                formatted += `<div class="rec-bullet">• ${cleanLine}</div>`;
+            }
+            // Regular paragraph
+            else if (line.length > 0) {
+                formatted += `<p class="rec-paragraph">${line}</p>`;
+            }
+        });
+        
+        formatted += '</div>';
+        return formatted;
+    }
+    
+    // Default: return as is
+    return text;
 }
 
 /**
