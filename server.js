@@ -185,8 +185,15 @@ RESPONDE EN FORMATO JSON ESTRICTO (sin markdown, sin backticks):
       "razon": "por qué este tema funcionará"
     }
   ],
-  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
-}`;
+  "keywords": ["keyword1 actual", "keyword2 actual", "keyword3 actual"],
+  "keywordsMissing": ["keyword faltante1", "keyword faltante2", "keyword faltante3", "keyword faltante4", "keyword faltante5"],
+  "hashtagsRecommended": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5", "hashtag6", "hashtag7", "hashtag8", "hashtag9", "hashtag10"]
+}
+
+IMPORTANTE PARA KEYWORDS Y HASHTAGS:
+- "keywords": 5-7 keywords que el usuario YA está usando (detectadas en su headline/about/experiencia)
+- "keywordsMissing": 5-7 keywords estratégicas que le FALTAN (alta prioridad SEO para su industria: ${profileData.industry})
+- "hashtagsRecommended": 10-15 hashtags específicos para ${profileData.industry} que maximizarán alcance en LinkedIn`;
 
   content.push({
     type: 'text',

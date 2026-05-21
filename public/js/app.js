@@ -147,7 +147,7 @@ function renderResults(data) {
     
     // Draw charts
     drawScoreCircle(score);
-    drawRadarChart(analysis.scores);
+    renderKeywordsAndHashtags(analysis);
     
     // Metrics grid
     renderMetrics(analysis.analisisDetallado);
@@ -211,134 +211,49 @@ function drawScoreCircle(score) {
  * Draw radar chart
  */
 function drawRadarChart(scores) {
-    const canvas = document.getElementById('radarChart');
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width = canvas.offsetWidth;
-    const height = canvas.height = 320;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const maxRadius = Math.min(width, height) / 2 - 60;
+    // Función eliminada - reemplazada por keywords visualization
+}
 
-    const data = [
-        scores.identidadVisual,
-        scores.propuestaValor,
-        scores.credibilidad,
-        scores.visibilidadSEO,
-        scores.engagement
-    ];
+/**
+ * Render keywords and hashtags
+ */
+function renderKeywordsAndHashtags(analysis) {
+    // Keywords using (from profile analysis)
+    const keywordsUsing = analysis.keywords || [];
+    const keywordsUsingEl = document.getElementById('keywordsUsing');
     
-    const labels = ['Identidad\nVisual', 'Propuesta\nde Valor', 'Credibilidad', 'Visibilidad\nSEO', 'Engagement'];
-
-    ctx.clearRect(0, 0, width, height);
-
-    // Draw grid
-    ctx.strokeStyle = '#E5E7EB';
-    ctx.lineWidth = 1;
-    for (let i = 1; i <= 5; i++) {
-        const radius = (maxRadius / 5) * i;
-        ctx.beginPath();
-        for (let j = 0; j <= 5; j++) {
-            const angle = (j * 2 * Math.PI / 5) - Math.PI / 2;
-            const x = centerX + radius * Math.cos(angle);
-            const y = centerY + radius * Math.sin(angle);
-            if (j === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.stroke();
+    if (keywordsUsing.length > 0) {
+        keywordsUsingEl.innerHTML = keywordsUsing.map((kw, index) => {
+            const size = index < 3 ? 'lg' : index < 6 ? 'md' : 'sm';
+            return `<span class="keyword-tag size-${size}">${kw}</span>`;
+        }).join('');
+    } else {
+        keywordsUsingEl.innerHTML = '<p style="color: var(--color-text-secondary);">No se detectaron keywords específicas</p>';
     }
-
-    // Draw axes
-    for (let i = 0; i < 5; i++) {
-        const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
-        const x = centerX + maxRadius * Math.cos(angle);
-        const y = centerY + maxRadius * Math.sin(angle);
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(x, y);
-        ctx.stroke();
+    
+    // Keywords missing (recommendations)
+    const keywordsMissing = analysis.keywordsMissing || [];
+    const keywordsMissingEl = document.getElementById('keywordsMissing');
+    
+    if (keywordsMissing.length > 0) {
+        keywordsMissingEl.innerHTML = keywordsMissing.map((kw, index) => {
+            const size = index < 3 ? 'lg' : index < 6 ? 'md' : 'sm';
+            return `<span class="keyword-tag size-${size}">${kw}</span>`;
+        }).join('');
+    } else {
+        keywordsMissingEl.innerHTML = '<p style="color: var(--color-text-secondary);">Tu perfil tiene buena cobertura de keywords</p>';
     }
-
-    // Draw data (animated)
-    let animProgress = 0;
-    const animateRadar = () => {
-        if (animProgress < 1) {
-            ctx.clearRect(0, 0, width, height);
-            
-            // Redraw grid and axes
-            ctx.strokeStyle = '#E5E7EB';
-            ctx.lineWidth = 1;
-            for (let i = 1; i <= 5; i++) {
-                const radius = (maxRadius / 5) * i;
-                ctx.beginPath();
-                for (let j = 0; j <= 5; j++) {
-                    const angle = (j * 2 * Math.PI / 5) - Math.PI / 2;
-                    const x = centerX + radius * Math.cos(angle);
-                    const y = centerY + radius * Math.sin(angle);
-                    if (j === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.closePath();
-                ctx.stroke();
-            }
-            
-            for (let i = 0; i < 5; i++) {
-                const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
-                const x = centerX + maxRadius * Math.cos(angle);
-                const y = centerY + maxRadius * Math.sin(angle);
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.lineTo(x, y);
-                ctx.stroke();
-            }
-            
-            // Draw animated data
-            ctx.fillStyle = 'rgba(10, 102, 194, 0.2)';
-            ctx.strokeStyle = '#0A66C2';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            for (let i = 0; i < 5; i++) {
-                const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
-                const radius = (data[i] / 100) * maxRadius * animProgress;
-                const x = centerX + radius * Math.cos(angle);
-                const y = centerY + radius * Math.sin(angle);
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            
-            animProgress += 0.02;
-            requestAnimationFrame(animateRadar);
-        } else {
-            // Draw final points
-            ctx.fillStyle = '#0A66C2';
-            for (let i = 0; i < 5; i++) {
-                const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
-                const radius = (data[i] / 100) * maxRadius;
-                const x = centerX + radius * Math.cos(angle);
-                const y = centerY + radius * Math.sin(angle);
-                ctx.beginPath();
-                ctx.arc(x, y, 4, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-        }
-    };
-    animateRadar();
-
-    // Draw labels
-    ctx.fillStyle = '#1a1a1a';
-    ctx.font = '13px DM Sans';
-    ctx.textAlign = 'center';
-    for (let i = 0; i < 5; i++) {
-        const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
-        const x = centerX + (maxRadius + 35) * Math.cos(angle);
-        const y = centerY + (maxRadius + 35) * Math.sin(angle);
-        const lines = labels[i].split('\n');
-        lines.forEach((line, index) => {
-            ctx.fillText(line, x, y + (index * 16));
-        });
+    
+    // Hashtags recommended
+    const hashtags = analysis.hashtagsRecommended || [];
+    const hashtagsEl = document.getElementById('hashtagsRecommended');
+    
+    if (hashtags.length > 0) {
+        hashtagsEl.innerHTML = hashtags.map(tag => {
+            return `<span class="hashtag-tag">#${tag.replace('#', '')}</span>`;
+        }).join('');
+    } else {
+        hashtagsEl.innerHTML = '<p style="color: var(--color-text-secondary);">No hay hashtags recomendados</p>';
     }
 }
 
