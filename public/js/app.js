@@ -6,19 +6,37 @@ let currentProfile = null;
 const API_BASE = window.location.origin;
 
 /**
+ * Update file count display
+ */
+function updateFileCount() {
+    const input = document.getElementById('postImages');
+    const count = input.files.length;
+    const display = document.getElementById('fileCount');
+    
+    if (count === 0) {
+        display.textContent = 'No se han seleccionado archivos';
+        display.style.color = 'var(--color-text-secondary)';
+    } else {
+        display.textContent = `${count} archivo${count > 1 ? 's' : ''} seleccionado${count > 1 ? 's' : ''}`;
+        display.style.color = 'var(--color-primary)';
+    }
+}
+
+/**
  * Analyze LinkedIn profile
  */
 async function analyzeProfile() {
-    const urlInput = document.getElementById('profileUrl');
-    const profileUrl = urlInput.value.trim();
+    // Get form data
+    const name = document.getElementById('profileName').value.trim();
+    const headline = document.getElementById('profileHeadline').value.trim();
+    const about = document.getElementById('profileAbout').value.trim();
+    const experience = document.getElementById('profileExperience').value.trim();
+    const skills = document.getElementById('profileSkills').value.trim();
+    const postImages = document.getElementById('postImages').files;
     
-    if (!profileUrl) {
-        alert('Por favor ingresa una URL de LinkedIn válida');
-        return;
-    }
-    
-    if (!profileUrl.includes('linkedin.com')) {
-        alert('Debe ser una URL válida de LinkedIn (linkedin.com)');
+    // Validation
+    if (!name || !headline || !about) {
+        alert('Por favor completa al menos: Nombre, Headline y About');
         return;
     }
     
@@ -29,11 +47,11 @@ async function analyzeProfile() {
     
     // Simulate loading steps
     const steps = [
-        'Conectando con LinkedIn...',
-        'Extrayendo información del perfil...',
-        'Analizando con Claude AI...',
-        'Generando insights...',
-        'Creando plan de acción...'
+        'Procesando tu información...',
+        'Analizando screenshots de posts...',
+        'Evaluando engagement y estrategia...',
+        'Generando insights con IA...',
+        'Creando plan de acción personalizado...'
     ];
     
     let stepIndex = 0;
@@ -42,15 +60,25 @@ async function analyzeProfile() {
             document.getElementById('loadingSteps').textContent = steps[stepIndex];
             stepIndex++;
         }
-    }, 2000);
+    }, 3000);
     
     try {
+        // Prepare FormData with images
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('headline', headline);
+        formData.append('about', about);
+        formData.append('experience', experience);
+        formData.append('skills', skills);
+        
+        // Add images
+        for (let i = 0; i < postImages.length; i++) {
+            formData.append('postImages', postImages[i]);
+        }
+        
         const response = await fetch(`${API_BASE}/api/analyze`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ profileUrl })
+            body: formData
         });
         
         clearInterval(stepInterval);

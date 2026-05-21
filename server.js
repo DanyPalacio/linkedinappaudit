@@ -1,21 +1,17 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const axios = require('axios');
-const cheerio = require('cheerio');
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
-const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize AI clients
+// Initialize Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Middleware
@@ -23,197 +19,202 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// CORS proxy para LinkedIn (con fallback)
-const CORS_PROXIES = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-  'https://api.codetabs.com/v1/proxy?quest='
-];
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten imágenes'));
+    }
+  }
+});
 
 /**
- * Extract profile data from LinkedIn HTML
+ * Detect industry from headline and about
  */
-function extractProfileData(html, profileUrl) {
-  const $ = cheerio.load(html);
-  
-  // Extraer información básica
-  const name = $('h1.text-heading-xlarge').first().text().trim() || 
-                $('h1').first().text().trim() ||
-                'Usuario LinkedIn';
-  
-  const headline = $('div.text-body-medium').first().text().trim() ||
-                   $('.top-card-layout__headline').text().trim() ||
-                   'Profesional';
-  
-  const about = $('section.artdeco-card div.display-flex p').text().trim() ||
-                $('.core-section-container__content p').text().trim() ||
-                '';
-  
-  const photoUrl = $('img.pv-top-card-profile-picture__image').attr('src') ||
-                   $('img[data-ghost-classes="profile-photo-edit__preview"]').attr('src') ||
-                   '';
-  
-  // Extraer experiencia (primeros 3 roles)
-  const experience = [];
-  $('.pvs-list__item--line-separated').slice(0, 3).each((i, elem) => {
-    const title = $(elem).find('.display-flex h3').text().trim();
-    const company = $(elem).find('.t-14').first().text().trim();
-    if (title) {
-      experience.push({ title, company });
-    }
-  });
-  
-  // Extraer skills (top skills)
-  const skills = [];
-  $('.pvs-list__item--one-column .hoverable-link-text').slice(0, 10).each((i, elem) => {
-    const skill = $(elem).text().trim();
-    if (skill) skills.push(skill);
-  });
-  
-  // Intentar detectar industria desde el about o headline
+function detectIndustry(headline, about) {
   const combinedText = `${headline} ${about}`.toLowerCase();
-  let industry = 'General';
   
   const industryKeywords = {
-    'Marketing Digital & E-commerce': ['ecommerce', 'e-commerce', 'amazon', 'marketplace', 'digital marketing', 'marketing digital'],
-    'Tecnología & Software': ['software', 'developer', 'engineering', 'tech', 'ai', 'ml', 'data'],
-    'Finanzas & Consultoría': ['finance', 'consulting', 'investment', 'banking', 'advisory'],
-    'Salud & Bienestar': ['health', 'healthcare', 'medical', 'wellness', 'pharma'],
-    'Educación': ['education', 'teaching', 'professor', 'academic', 'university'],
-    'Creatividad & Diseño': ['design', 'creative', 'ux', 'ui', 'graphic', 'art'],
+    'Marketing Digital & E-commerce': ['ecommerce', 'e-commerce', 'amazon', 'marketplace', 'digital marketing', 'marketing digital', 'seller', 'ventas online'],
+    'Tecnología & Software': ['software', 'developer', 'engineering', 'tech', 'ai', 'ml', 'data', 'programming', 'code'],
+    'Finanzas & Consultoría': ['finance', 'consulting', 'investment', 'banking', 'advisory', 'financiero'],
+    'Salud & Bienestar': ['health', 'healthcare', 'medical', 'wellness', 'pharma', 'salud'],
+    'Educación': ['education', 'teaching', 'professor', 'academic', 'university', 'educación'],
+    'Creatividad & Diseño': ['design', 'creative', 'ux', 'ui', 'graphic', 'art', 'diseño'],
+    'Emprendimiento': ['entrepreneur', 'startup', 'founder', 'emprendedor', 'cofundador'],
   };
   
   for (const [ind, keywords] of Object.entries(industryKeywords)) {
     if (keywords.some(kw => combinedText.includes(kw))) {
-      industry = ind;
-      break;
+      return ind;
     }
   }
   
+  return 'General';
+}
+
+/**
+ * Convert image buffer to base64 for Claude
+ */
+function imageToBase64(buffer, mimetype) {
   return {
-    name,
-    headline,
-    about,
-    photoUrl,
-    experience,
-    skills,
-    industry,
-    profileUrl
+    type: 'image',
+    source: {
+      type: 'base64',
+      media_type: mimetype,
+      data: buffer.toString('base64')
+    }
   };
 }
 
 /**
- * Analyze profile with Claude API
+ * Analyze profile with Claude AI (with vision for post images)
  */
-async function analyzeWithClaude(profileData) {
-  const prompt = `Eres un experto en Personal Branding y LinkedIn. Analiza este perfil de LinkedIn usando el siguiente framework de 5 categorías (cada una vale 20 puntos, total 100):
+async function analyzeWithClaude(profileData, postImages) {
+  // Build content array with text + images
+  const content = [];
+  
+  // Add text prompt
+  const textPrompt = `Eres un experto en Personal Branding y LinkedIn con 15+ años de experiencia. Analiza este perfil de LinkedIn y sus posts recientes usando el siguiente framework profesional:
 
 PERFIL A ANALIZAR:
 - Nombre: ${profileData.name}
 - Headline: ${profileData.headline}
 - About: ${profileData.about}
-- Experiencia: ${JSON.stringify(profileData.experience)}
-- Skills: ${profileData.skills.join(', ')}
+- Experiencia: ${profileData.experience}
+- Skills: ${profileData.skills}
 - Industria detectada: ${profileData.industry}
+- Posts recientes: ${postImages.length} screenshots proporcionados
 
-FRAMEWORK DE EVALUACIÓN:
+FRAMEWORK DE EVALUACIÓN (100 puntos total):
 
-1. IDENTIDAD VISUAL (20 pts):
-   - Foto profesional (calidad, expresión, fondo)
-   - Banner personalizado
-   - Coherencia visual
+1. IDENTIDAD VISUAL (20 pts) - Evalúa coherencia profesional
+2. PROPUESTA DE VALOR (20 pts) - Claridad, diferenciación, CTA
+3. CREDIBILIDAD (20 pts) - Experiencia, logros, autoridad
+4. VISIBILIDAD SEO (20 pts) - Keywords estratégicas, optimización
+5. ENGAGEMENT (20 pts) - Actividad, interacción, consistencia
 
-2. PROPUESTA DE VALOR (20 pts):
-   - Claridad del headline (comunica valor inmediato)
-   - About/Resumen (storytelling, diferenciadores, CTA)
-   - Coherencia entre elementos
+${postImages.length > 0 ? `
+ANÁLISIS DE POSTS (CRÍTICO):
+- Revisa CADA screenshot de post que te envío
+- Identifica: likes, comentarios, shares visibles
+- Calcula tasa de engagement aproximada
+- Detecta tipo de contenido (educativo, comercial, thought leadership)
+- Evalúa frecuencia de publicación
+- Identifica qué posts generan más engagement
+` : `
+NOTA: No hay screenshots de posts. Evalúa engagement basado en la completitud del perfil y asume engagement bajo (máx 12/20).
+`}
 
-3. CREDIBILIDAD (20 pts):
-   - Experiencia laboral detallada con logros cuantificables
-   - Skills relevantes (top 3-5 estratégicos)
-   - Trayectoria consistente
-
-4. VISIBILIDAD SEO (20 pts):
-   - Keywords estratégicas
-   - Optimización para búsquedas
-   - Completitud del perfil
-
-5. ENGAGEMENT (20 pts):
-   - Evaluación general de engagement potencial basado en la estructura del perfil
-   - Nota: No tenemos acceso a posts reales, evalúa según la completitud y profesionalismo
+CALIBRACIÓN IMPORTANTE:
+- Baseline mínimo: 60 puntos (perfil profesional básico completo)
+- Si publica activamente (${postImages.length}+ posts recientes): mínimo 70 puntos
+- Perfil excelente + actividad consistente: 80-95 puntos
+- NUNCA dar menos de 60 si el perfil está completo
 
 RESPONDE EN FORMATO JSON ESTRICTO (sin markdown, sin backticks):
 {
   "scores": {
-    "identidadVisual": número,
-    "propuestaValor": número,
-    "credibilidad": número,
-    "visibilidadSEO": número,
-    "engagement": número,
-    "total": número
+    "identidadVisual": número (10-20),
+    "propuestaValor": número (10-20),
+    "credibilidad": número (12-20),
+    "visibilidadSEO": número (10-20),
+    "engagement": número (10-20),
+    "total": número (60-95)
   },
-  "nivel": "Crítico|Básico|Profesional|Élite",
+  "nivel": "Básico|Profesional|Élite",
   "resumenEjecutivo": {
-    "fortalezas": ["string", "string", "string"],
-    "debilidades": ["string", "string"]
+    "fortalezas": ["insight específico 1", "insight específico 2", "insight específico 3"],
+    "debilidades": ["área de mejora 1", "área de mejora 2"]
   },
   "analisisDetallado": {
     "identidadVisual": {
       "score": número,
-      "fortalezas": "string",
-      "oportunidades": "string"
+      "fortalezas": "análisis detallado",
+      "oportunidades": "recomendaciones específicas"
     },
     "propuestaValor": {
       "score": número,
-      "fortalezas": "string",
-      "oportunidades": "string"
+      "fortalezas": "análisis detallado",
+      "oportunidades": "recomendaciones específicas"
     },
     "credibilidad": {
       "score": número,
-      "fortalezas": "string",
-      "oportunidades": "string"
+      "fortalezas": "análisis detallado",
+      "oportunidades": "recomendaciones específicas"
     },
     "visibilidadSEO": {
       "score": número,
-      "fortalezas": "string",
-      "oportunidades": "string"
+      "fortalezas": "análisis detallado con keywords identificadas",
+      "oportunidades": "keywords faltantes + estrategia"
     },
     "engagement": {
       "score": número,
-      "fortalezas": "string",
-      "oportunidades": "string"
+      "fortalezas": "análisis de posts + engagement real observado",
+      "oportunidades": "estrategia de contenido + frecuencia óptima"
     }
+  },
+  "engagementAnalysis": {
+    "postsAnalyzed": ${postImages.length},
+    "avgEngagementRate": "X%",
+    "bestPerformingContentType": "tipo",
+    "publishingFrequency": "frecuencia detectada",
+    "insights": ["insight 1", "insight 2", "insight 3"]
   },
   "oportunidades": [
     {
       "prioridad": "alta|media|baja",
-      "titulo": "string",
-      "impacto": "string",
-      "accion": "string"
+      "titulo": "título accionable",
+      "impacto": "impacto específico en score/resultados",
+      "accion": "paso concreto a seguir"
     }
   ],
   "planAccion": {
-    "semanas1_2": ["acción1", "acción2", "acción3"],
-    "semanas3_6": ["acción1", "acción2", "acción3"],
-    "semanas7_12": ["acción1", "acción2", "acción3"]
+    "semanas1_2": ["acción específica 1", "acción específica 2", "acción específica 3"],
+    "semanas3_6": ["acción específica 1", "acción específica 2", "acción específica 3"],
+    "semanas7_12": ["acción específica 1", "acción específica 2", "acción específica 3"]
   },
-  "keywords": ["keyword1", "keyword2", "keyword3"]
+  "nextPosts": [
+    {
+      "tema": "tema específico",
+      "tipo": "educativo|comercial|thought leadership",
+      "razon": "por qué este tema funcionará"
+    }
+  ],
+  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
 }`;
 
+  content.push({
+    type: 'text',
+    text: textPrompt
+  });
+
+  // Add post images if available
+  if (postImages && postImages.length > 0) {
+    for (const img of postImages) {
+      content.push(imageToBase64(img.buffer, img.mimetype));
+    }
+  }
+
+  // Call Claude with vision
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 4000,
+    max_tokens: 6000,
     messages: [
       {
         role: 'user',
-        content: prompt
+        content: content
       }
     ]
   });
 
   const responseText = message.content[0].text;
   
-  // Limpiar la respuesta (por si tiene markdown)
+  // Clean response
   const cleanedResponse = responseText
     .replace(/```json/g, '')
     .replace(/```/g, '')
@@ -224,63 +225,43 @@ RESPONDE EN FORMATO JSON ESTRICTO (sin markdown, sin backticks):
 
 /**
  * POST /api/analyze
- * Analiza un perfil de LinkedIn
+ * Analiza un perfil de LinkedIn con texto + imágenes
  */
-app.post('/api/analyze', async (req, res) => {
+app.post('/api/analyze', upload.array('postImages', 10), async (req, res) => {
   try {
-    const { profileUrl } = req.body;
+    const { name, headline, about, experience, skills } = req.body;
+    const postImages = req.files || [];
     
-    if (!profileUrl) {
-      return res.status(400).json({ error: 'URL del perfil es requerida' });
+    // Validation
+    if (!name || !headline || !about) {
+      return res.status(400).json({ 
+        error: 'Faltan campos requeridos: nombre, headline y about son obligatorios' 
+      });
     }
     
-    // Validar que sea una URL de LinkedIn
-    if (!profileUrl.includes('linkedin.com')) {
-      return res.status(400).json({ error: 'Debe ser una URL válida de LinkedIn' });
-    }
+    console.log('📝 Analyzing profile:', name);
+    console.log('📸 Post images:', postImages.length);
     
-    console.log('🔍 Fetching profile:', profileUrl);
+    // Build profile data
+    const profileData = {
+      name,
+      headline,
+      about,
+      experience: experience || 'No proporcionado',
+      skills: skills || 'No proporcionado',
+      industry: detectIndustry(headline, about),
+      photoUrl: '' // No photo upload in this version
+    };
     
-    // Intentar con múltiples proxies CORS
-    let response = null;
-    let lastError = null;
+    console.log('🏢 Industry detected:', profileData.industry);
     
-    for (const proxy of CORS_PROXIES) {
-      try {
-        console.log(`   Trying proxy: ${proxy.substring(0, 30)}...`);
-        response = await axios.get(`${proxy}${encodeURIComponent(profileUrl)}`, {
-          timeout: 20000,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        });
-        console.log('   ✅ Proxy worked!');
-        break;
-      } catch (err) {
-        console.log(`   ❌ Proxy failed: ${err.message}`);
-        lastError = err;
-        continue;
-      }
-    }
-    
-    if (!response) {
-      throw new Error(`All proxies failed. Last error: ${lastError?.message || 'Unknown'}`);
-    }
-    
-    console.log('✅ Profile fetched successfully');
-    
-    // Extraer datos del perfil
-    const profileData = extractProfileData(response.data, profileUrl);
-    
-    console.log('✅ Profile data extracted:', profileData.name);
-    
-    // Analizar con Claude
-    console.log('🤖 Analyzing with Claude...');
-    const analysis = await analyzeWithClaude(profileData);
+    // Analyze with Claude
+    console.log('🤖 Analyzing with Claude AI...');
+    const analysis = await analyzeWithClaude(profileData, postImages);
     
     console.log('✅ Analysis completed - Score:', analysis.scores.total);
     
-    // Combinar datos del perfil con análisis
+    // Build result
     const result = {
       profile: profileData,
       analysis: analysis,
@@ -311,7 +292,6 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'Mensaje es requerido' });
     }
     
-    // Usar Claude para el chat
     const chatPrompt = `Eres un consultor experto en Personal Branding y LinkedIn. 
 
 CONTEXTO DEL PERFIL ANALIZADO:
@@ -358,6 +338,7 @@ app.get('/api/health', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`✅ LinkedIn Audit App running on port ${PORT}`);
+  console.log(`✅ LinkedIn Audit App v2.0 running on port ${PORT}`);
   console.log(`🌐 Open http://localhost:${PORT}`);
+  console.log(`📸 Image analysis: ENABLED`);
 });

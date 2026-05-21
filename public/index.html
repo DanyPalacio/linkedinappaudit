@@ -38,19 +38,76 @@
                 </p>
 
                 <div class="input-group">
-                    <label class="input-label">URL de tu perfil de LinkedIn</label>
-                    <div class="input-wrapper">
+                    <label class="input-label">📝 Información de tu perfil</label>
+                    
+                    <div class="form-section">
+                        <label class="field-label">Tu nombre completo</label>
                         <input 
-                            type="url" 
+                            type="text" 
                             class="input-field" 
-                            placeholder="https://www.linkedin.com/in/tu-perfil"
-                            id="profileUrl"
+                            placeholder="Ej: Daniel Palacio"
+                            id="profileName"
                         >
-                        <button class="btn btn-primary" onclick="analyzeProfile()">
-                            <span>🔍</span>
-                            Analizar Perfil
-                        </button>
                     </div>
+
+                    <div class="form-section">
+                        <label class="field-label">Tu Headline (título profesional)</label>
+                        <input 
+                            type="text" 
+                            class="input-field" 
+                            placeholder="Ej: Amazon Expert - AI Creator | Cofundador @SellerPlus"
+                            id="profileHeadline"
+                        >
+                    </div>
+
+                    <div class="form-section">
+                        <label class="field-label">About / Resumen (copia y pega)</label>
+                        <textarea 
+                            class="input-textarea" 
+                            rows="6"
+                            placeholder="Pega aquí tu sección 'Acerca de' completa de LinkedIn..."
+                            id="profileAbout"
+                        ></textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="field-label">Experiencia clave (último rol o 2-3 principales)</label>
+                        <textarea 
+                            class="input-textarea" 
+                            rows="4"
+                            placeholder="Ej: Cofundador en Seller Plus (2020-presente) - Agencia #1 de Amazon Marketing en Latam..."
+                            id="profileExperience"
+                        ></textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="field-label">Skills principales (separados por comas)</label>
+                        <input 
+                            type="text" 
+                            class="input-field" 
+                            placeholder="Ej: Amazon FBA, E-commerce, Digital Marketing, AI, SEO"
+                            id="profileSkills"
+                        >
+                    </div>
+
+                    <div class="form-section">
+                        <label class="field-label">📸 Screenshots de tus últimos posts (5-10 recomendado)</label>
+                        <p class="field-hint">Sube capturas de pantalla de tus posts recientes para analizar engagement</p>
+                        <input 
+                            type="file" 
+                            class="input-file" 
+                            accept="image/*"
+                            multiple
+                            id="postImages"
+                            onchange="updateFileCount()"
+                        >
+                        <div class="file-count" id="fileCount">No se han seleccionado archivos</div>
+                    </div>
+
+                    <button class="btn btn-primary btn-large" onclick="analyzeProfile()">
+                        <span>🚀</span>
+                        Analizar con IA
+                    </button>
                 </div>
 
                 <div class="features">

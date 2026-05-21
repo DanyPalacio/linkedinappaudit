@@ -191,6 +191,75 @@ h1, h2, h3 {
     border: 1px solid var(--color-border-light);
 }
 
+.form-section {
+    margin-bottom: 1.5rem;
+}
+
+.field-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+}
+
+.field-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.input-textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-family: 'DM Sans', sans-serif;
+    transition: var(--transition);
+    background: var(--color-bg-secondary);
+    resize: vertical;
+}
+
+.input-textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-bg);
+    box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.1);
+}
+
+.input-file {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--color-bg-secondary);
+}
+
+.input-file:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg);
+}
+
+.file-count {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+}
+
+.btn-large {
+    width: 100%;
+    padding: 1.25rem 2rem;
+    font-size: 1.125rem;
+    margin-top: 1rem;
+}
+
 .input-label {
     display: block;
     font-size: 0.875rem;
