@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkedIn Profile Audit - Análisis IA</title>
+    <title>Personal Branding Audit AI - Analiza tu perfil profesional</title>
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NHEFZ9M00N"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-NHEFZ9M00N');
+    </script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
@@ -15,8 +25,8 @@
         <div class="container">
             <div class="header-content">
                 <a href="#" class="logo" onclick="resetApp(); return false;">
-                    <div class="logo-icon">LA</div>
-                    <span>LinkedIn Audit</span>
+                    <div class="logo-icon">PB</div>
+                    <span>Personal Branding Audit AI</span>
                 </a>
                 <button class="btn-reset" id="resetBtn" onclick="resetApp()" style="display: none;">
                     🔄 Nueva Auditoría
@@ -327,6 +337,61 @@
             </div>
         </div>
     </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-branding">
+                    <div class="footer-logo">
+                        <div class="logo-icon">PB</div>
+                        <span>Personal Branding Audit AI</span>
+                    </div>
+                    <p class="footer-description">
+                        Herramienta open source con IA para analizar perfiles profesionales.
+                        <br>Powered by Claude AI (Anthropic).
+                    </p>
+                </div>
+                
+                <div class="footer-links">
+                    <div class="footer-section">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="https://github.com/DanyPalacio/personalbranding-audit/blob/main/TERMS.md" target="_blank">Términos de Uso</a></li>
+                            <li><a href="https://github.com/DanyPalacio/personalbranding-audit/blob/main/PRIVACY.md" target="_blank">Política de Privacidad</a></li>
+                            <li><a href="https://github.com/DanyPalacio/personalbranding-audit/blob/main/LICENSE.md" target="_blank">Licencia MIT</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4>Open Source</h4>
+                        <ul>
+                            <li><a href="https://github.com/DanyPalacio/personalbranding-audit" target="_blank">GitHub Repository</a></li>
+                            <li><a href="https://github.com/DanyPalacio/personalbranding-audit/blob/main/CONTRIBUTING.md" target="_blank">Contribuir</a></li>
+                            <li><a href="https://github.com/DanyPalacio/personalbranding-audit/blob/main/CODE_OF_CONDUCT.md" target="_blank">Código de Conducta</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4>Recursos</h4>
+                        <ul>
+                            <li><a href="https://github.com/DanyPalacio/personalbranding-audit/blob/main/README.md" target="_blank">Documentación</a></li>
+                            <li><a href="https://github.com/DanyPalacio/personalbranding-audit/issues" target="_blank">Reportar un Bug</a></li>
+                            <li><a href="https://anthropic.com" target="_blank">Anthropic Claude</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2026 Daniel Palacio. Licencia MIT. Software "as is" sin garantías.</p>
+                <p class="footer-disclaimer">
+                    Esta herramienta no está afiliada con LinkedIn. 
+                    Análisis generado por IA - verificar recomendaciones independientemente.
+                </p>
+            </div>
+        </div>
+    </footer>
 
     <script src="/js/app.js"></script>
 </body>
