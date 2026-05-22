@@ -32,6 +32,9 @@ async function analyzeProfile() {
     const about = document.getElementById('profileAbout').value.trim();
     const experience = document.getElementById('profileExperience').value.trim();
     const skills = document.getElementById('profileSkills').value.trim();
+    const followers = document.getElementById('profileFollowers').value.trim();
+    const hasPremium = document.getElementById('profilePremium').checked;
+    const isVerified = document.getElementById('profileVerified').checked;
     const postImages = document.getElementById('postImages').files;
     
     // Validation
@@ -50,6 +53,7 @@ async function analyzeProfile() {
         'Procesando tu información...',
         'Analizando screenshots de posts...',
         'Evaluando engagement y estrategia...',
+        'Calculando métricas de credibilidad...',
         'Generando insights con IA...',
         'Creando plan de acción personalizado...'
     ];
@@ -70,6 +74,9 @@ async function analyzeProfile() {
         formData.append('about', about);
         formData.append('experience', experience);
         formData.append('skills', skills);
+        formData.append('followers', followers || '0');
+        formData.append('hasPremium', hasPremium);
+        formData.append('isVerified', isVerified);
         
         // Add images
         for (let i = 0; i < postImages.length; i++) {

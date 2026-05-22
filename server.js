@@ -88,15 +88,24 @@ PERFIL A ANALIZAR:
 - Experiencia: ${profileData.experience}
 - Skills: ${profileData.skills}
 - Industria detectada: ${profileData.industry}
+- Seguidores: ${profileData.followers}
+- LinkedIn Premium: ${profileData.hasPremium ? 'SÍ ⭐' : 'NO'}
+- Cuenta Verificada: ${profileData.isVerified ? 'SÍ ✓' : 'NO'}
 - Posts recientes: ${postImages.length} screenshots proporcionados
 
-FRAMEWORK DE EVALUACIÓN (100 puntos total):
+BONIFICACIONES POR MÉTRICAS:
+- Seguidores: +${profileData.bonuses.followers} pts (${profileData.followers < 500 ? '<500' : profileData.followers < 2000 ? '500-2K' : profileData.followers < 10000 ? '2K-10K' : '10K+'})
+- Premium: +${profileData.bonuses.premium} pts (+3 Credibilidad, +3 SEO)
+- Verificado: +${profileData.bonuses.verified} pts (+2 Credibilidad, +2 Visual)
+- TOTAL BONUS: +${profileData.bonuses.total} pts
 
-1. IDENTIDAD VISUAL (20 pts) - Evalúa coherencia profesional
-2. PROPUESTA DE VALOR (20 pts) - Claridad, diferenciación, CTA
-3. CREDIBILIDAD (20 pts) - Experiencia, logros, autoridad
-4. VISIBILIDAD SEO (20 pts) - Keywords estratégicas, optimización
-5. ENGAGEMENT (20 pts) - Actividad, interacción, consistencia
+FRAMEWORK DE EVALUACIÓN (100 puntos base + bonuses):
+
+1. IDENTIDAD VISUAL (20 pts base ${profileData.isVerified ? '+ 2 pts verificado' : ''}) - Evalúa coherencia profesional
+2. PROPUESTA DE VALOR (20 pts base) - Claridad, diferenciación, CTA
+3. CREDIBILIDAD (20 pts base ${profileData.hasPremium ? '+ 3 pts premium' : ''} ${profileData.isVerified ? '+ 2 pts verificado' : ''}) - Experiencia, logros, autoridad
+4. VISIBILIDAD SEO (20 pts base ${profileData.hasPremium ? '+ 3 pts premium' : ''}) - Keywords estratégicas, optimización
+5. ENGAGEMENT (20 pts base ${profileData.bonuses.followers > 0 ? '+ ' + profileData.bonuses.followers + ' pts seguidores' : ''}) - Actividad, interacción, consistencia
 
 ${postImages.length > 0 ? `
 ANÁLISIS DE POSTS (CRÍTICO):
@@ -113,18 +122,27 @@ NOTA: No hay screenshots de posts. Evalúa engagement basado en la completitud d
 CALIBRACIÓN IMPORTANTE:
 - Baseline mínimo: 60 puntos (perfil profesional básico completo)
 - Si publica activamente (${postImages.length}+ posts recientes): mínimo 70 puntos
-- Perfil excelente + actividad consistente: 80-95 puntos
-- NUNCA dar menos de 60 si el perfil está completo
+- Perfil excelente + actividad consistente: 80-95 puntos base
+- BONUSES TOTALES: +${profileData.bonuses.total} pts
+- Score máximo posible: ${100 + profileData.bonuses.total} pts
+- NUNCA dar menos de 60 en el score base si el perfil está completo
+
+APLICACIÓN DE BONUSES:
+- Identidad Visual: base ${profileData.isVerified ? '+ 2 pts (verificado)' : '(sin bonus)'}
+- Propuesta de Valor: base (sin bonus)
+- Credibilidad: base ${profileData.hasPremium ? '+ 3 pts (premium)' : ''} ${profileData.isVerified ? '+ 2 pts (verificado)' : ''}
+- Visibilidad SEO: base ${profileData.hasPremium ? '+ 3 pts (premium)' : ''} ${profileData.bonuses.followers > 0 ? '+ ' + Math.floor(profileData.bonuses.followers/2) + ' pts (alcance)' : ''}
+- Engagement: base ${profileData.bonuses.followers > 0 ? '+ ' + Math.ceil(profileData.bonuses.followers/2) + ' pts (seguidores)' : ''}
 
 RESPONDE EN FORMATO JSON ESTRICTO (sin markdown, sin backticks):
 {
   "scores": {
-    "identidadVisual": número (10-20),
-    "propuestaValor": número (10-20),
-    "credibilidad": número (12-20),
-    "visibilidadSEO": número (10-20),
-    "engagement": número (10-20),
-    "total": número (60-95)
+    "identidadVisual": número (incluye bonus verificado si aplica),
+    "propuestaValor": número (base, sin bonus),
+    "credibilidad": número (incluye bonus premium + verificado si aplica),
+    "visibilidadSEO": número (incluye bonus premium + parte seguidores si aplica),
+    "engagement": número (incluye bonus seguidores si aplica),
+    "total": número (suma de todos incluyendo bonuses)
   },
   "nivel": "Básico|Profesional|Élite",
   "resumenEjecutivo": {
@@ -236,7 +254,7 @@ IMPORTANTE PARA KEYWORDS Y HASHTAGS:
  */
 app.post('/api/analyze', upload.array('postImages', 10), async (req, res) => {
   try {
-    const { name, headline, about, experience, skills } = req.body;
+    const { name, headline, about, experience, skills, followers, hasPremium, isVerified } = req.body;
     const postImages = req.files || [];
     
     // Validation
@@ -247,7 +265,22 @@ app.post('/api/analyze', upload.array('postImages', 10), async (req, res) => {
     }
     
     console.log('📝 Analyzing profile:', name);
+    console.log('👥 Followers:', followers);
+    console.log('⭐ Premium:', hasPremium === 'true');
+    console.log('✓ Verified:', isVerified === 'true');
     console.log('📸 Post images:', postImages.length);
+    
+    // Parse metrics
+    const followersCount = parseInt(followers) || 0;
+    const isPremium = hasPremium === 'true';
+    const isAccountVerified = isVerified === 'true';
+    
+    // Calculate bonus points based on metrics
+    const followersBonus = calculateFollowersBonus(followersCount);
+    const premiumBonus = isPremium ? 6 : 0; // +3 Credibilidad + +3 SEO
+    const verifiedBonus = isAccountVerified ? 4 : 0; // +2 Credibilidad + +2 Visual
+    
+    console.log('💰 Bonuses - Followers:', followersBonus, 'Premium:', premiumBonus, 'Verified:', verifiedBonus);
     
     // Build profile data
     const profileData = {
@@ -256,8 +289,17 @@ app.post('/api/analyze', upload.array('postImages', 10), async (req, res) => {
       about,
       experience: experience || 'No proporcionado',
       skills: skills || 'No proporcionado',
+      followers: followersCount,
+      hasPremium: isPremium,
+      isVerified: isAccountVerified,
       industry: detectIndustry(headline, about),
-      photoUrl: '' // No photo upload in this version
+      photoUrl: '',
+      bonuses: {
+        followers: followersBonus,
+        premium: premiumBonus,
+        verified: verifiedBonus,
+        total: followersBonus + premiumBonus + verifiedBonus
+      }
     };
     
     console.log('🏢 Industry detected:', profileData.industry);
@@ -286,6 +328,16 @@ app.post('/api/analyze', upload.array('postImages', 10), async (req, res) => {
     });
   }
 });
+
+/**
+ * Calculate followers bonus points
+ */
+function calculateFollowersBonus(followers) {
+  if (followers >= 10000) return 6;
+  if (followers >= 2000) return 4;
+  if (followers >= 500) return 2;
+  return 0;
+}
 
 /**
  * POST /api/chat

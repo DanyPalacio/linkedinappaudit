@@ -91,6 +91,41 @@
                     </div>
 
                     <div class="form-section">
+                        <label class="field-label">📊 Métricas de tu perfil</label>
+                        <div class="metrics-cards">
+                            <div class="metric-input-card">
+                                <div class="metric-icon-large">👥</div>
+                                <label class="metric-card-label">Seguidores</label>
+                                <input 
+                                    type="number" 
+                                    class="metric-number-input" 
+                                    placeholder="2500"
+                                    id="profileFollowers"
+                                    min="0"
+                                >
+                            </div>
+
+                            <div class="metric-input-card">
+                                <div class="metric-icon-large">⭐</div>
+                                <label class="metric-card-label">LinkedIn Premium</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="profilePremium">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="metric-input-card">
+                                <div class="metric-icon-large">✓</div>
+                                <label class="metric-card-label">Cuenta Verificada</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="profileVerified">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
                         <label class="field-label">📸 Screenshots de tus últimos posts (5-10 recomendado)</label>
                         <p class="field-hint">Sube capturas de pantalla de tus posts recientes para analizar engagement</p>
                         <input 
