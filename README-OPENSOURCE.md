@@ -19,11 +19,12 @@ Personal Branding Audit AI analyzes professional profiles using Claude AI to pro
 
 **Key features:**
 - ✅ Real-time analysis (no data storage)
-- ✅ Image analysis (post screenshots via Claude Vision)
-- ✅ Metrics-based scoring (followers, premium, verified)
+- ✅ Fast, text-based analysis (~15-25s, streaming under the hood — no image upload needed)
+- ✅ Metrics-based scoring (followers, premium, verified, profile photo, banner, posting frequency)
 - ✅ Interactive chat assistant
 - ✅ Elegant, responsive UI
 - ✅ Export to HTML report
+- ✅ Built for auditing multiple accounts quickly
 
 ---
 
@@ -84,7 +85,6 @@ cp .env.example .env
 Edit `.env`:
 ```env
 ANTHROPIC_API_KEY=your_anthropic_key_here
-OPENAI_API_KEY=your_openai_key_here
 PORT=3000
 NODE_ENV=development
 ```
@@ -109,7 +109,6 @@ Open: http://localhost:3000
    - **Start Command:** `npm start`
    - **Environment Variables:**
      - `ANTHROPIC_API_KEY`
-     - `OPENAI_API_KEY`
      - `NODE_ENV=production`
 
 Deploy time: ~2-3 minutes
@@ -151,13 +150,14 @@ Deploy time: ~2-3 minutes
 - Followers count
 - Premium status (toggle)
 - Verified badge (toggle)
-- Post screenshots (5-10 images)
+- Profile photo present (toggle, affects score)
+- Cover/banner photo present (toggle, affects score)
+- Posts published in the last 5 days (number, affects score)
 
 ### **2. AI-Powered Insights**
-- Engagement analysis from screenshots
-- Content type detection (educational, commercial, thought leadership)
-- Publishing frequency evaluation
-- Next 3-5 posts suggested
+- Content quality and positioning detection (educational, commercial, thought leadership)
+- Publishing frequency evaluation based on recent activity
+- Actionable strengths and weaknesses summary
 
 ### **3. Keywords & Hashtags**
 - Keywords currently used (detected)

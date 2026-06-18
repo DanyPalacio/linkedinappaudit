@@ -165,20 +165,6 @@
                         </div>
                     </div>
 
-                    <div class="form-section">
-                        <label class="field-label">📸 Screenshots de tus últimos posts (3-6 recomendado)</label>
-                        <p class="field-hint">Sube capturas de pantalla de tus posts recientes para analizar engagement. Se optimizan automáticamente antes de subirse, así que no te preocupes por el tamaño.</p>
-                        <input 
-                            type="file" 
-                            class="input-file" 
-                            accept="image/*"
-                            multiple
-                            id="postImages"
-                            onchange="updateFileCount()"
-                        >
-                        <div class="file-count" id="fileCount">No se han seleccionado archivos</div>
-                    </div>
-
                     <button class="btn btn-primary btn-large" onclick="analyzeProfile()">
                         <span>🚀</span>
                         Analizar con IA
@@ -194,7 +180,7 @@
                     <div class="feature">
                         <div class="feature-icon">🎯</div>
                         <div class="feature-title">Insights IA</div>
-                        <div class="feature-desc">Análisis profundo con Claude & GPT-4</div>
+                        <div class="feature-desc">Análisis profundo con Claude AI</div>
                     </div>
                     <div class="feature">
                         <div class="feature-icon">🚀</div>
@@ -216,7 +202,7 @@
         <div class="container">
             <div class="spinner"></div>
             <h3>Analizando tu perfil con IA...</h3>
-            <p class="loading-steps" id="loadingSteps">Conectando con LinkedIn...</p>
+            <p class="loading-steps" id="loadingSteps">Procesando tu información...</p>
         </div>
     </div>
 

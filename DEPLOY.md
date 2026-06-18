@@ -51,7 +51,6 @@ git push -u origin main
    En la sección "Environment":
    ```
    ANTHROPIC_API_KEY = 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
-   OPENAI_API_KEY = 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
    NODE_ENV = production
    ```
 

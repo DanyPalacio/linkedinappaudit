@@ -52,7 +52,6 @@ npm install
 Crear archivo `.env` en la raíz del proyecto:
 ```env
 ANTHROPIC_API_KEY=tu_api_key_de_anthropic
-OPENAI_API_KEY=tu_api_key_de_openai
 PORT=3000
 NODE_ENV=development
 ```
@@ -103,7 +102,6 @@ git push -u origin main
    - Añadir:
      ```
      ANTHROPIC_API_KEY = tu_key
-     OPENAI_API_KEY = tu_key
      NODE_ENV = production
      ```
 
