@@ -165,6 +165,20 @@
                         </div>
                     </div>
 
+                    <div class="form-section">
+                        <label class="field-label">📸 Screenshots de tus últimos posts (3-6 recomendado)</label>
+                        <p class="field-hint">Sube capturas de pantalla de tus posts recientes para que la IA analice el engagement real. Se optimizan automáticamente antes de subirse.</p>
+                        <input 
+                            type="file" 
+                            class="input-file" 
+                            accept="image/*"
+                            multiple
+                            id="postImages"
+                            onchange="updateFileCount()"
+                        >
+                        <div class="file-count" id="fileCount">No se han seleccionado archivos</div>
+                    </div>
+
                     <button class="btn btn-primary btn-large" onclick="analyzeProfile()">
                         <span>🚀</span>
                         Analizar con IA
