@@ -12,6 +12,8 @@ const PORT = process.env.PORT || 3000;
 // Initialize Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  timeout: 120 * 1000, // 120s - evita que la conexión cuelgue indefinidamente
+  maxRetries: 2,       // reintenta automáticamente ante "Premature close" u otros fallos de red
 });
 
 // Middleware
@@ -22,7 +24,7 @@ app.use(express.static('public'));
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB per file (las imágenes se comprimen en el cliente antes de subir)
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -258,7 +260,7 @@ IMPORTANTE PARA KEYWORDS Y HASHTAGS:
  * POST /api/analyze
  * Analiza un perfil de LinkedIn con texto + imágenes
  */
-app.post('/api/analyze', upload.array('postImages', 10), async (req, res) => {
+app.post('/api/analyze', upload.array('postImages', 6), async (req, res) => {
   try {
     const { name, headline, about, experience, skills, followers, hasPremium, isVerified, hasPhoto, hasHeader, recentPosts } = req.body;
     const postImages = req.files || [];

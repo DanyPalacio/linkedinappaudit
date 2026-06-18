@@ -16,10 +16,60 @@ function updateFileCount() {
     if (count === 0) {
         display.textContent = 'No se han seleccionado archivos';
         display.style.color = 'var(--color-text-secondary)';
+    } else if (count > 6) {
+        display.textContent = `⚠️ ${count} archivos seleccionados. Máximo permitido: 6. Por favor selecciona menos.`;
+        display.style.color = '#dc2626';
     } else {
         display.textContent = `${count} archivo${count > 1 ? 's' : ''} seleccionado${count > 1 ? 's' : ''}`;
         display.style.color = 'var(--color-primary)';
     }
+}
+
+/**
+ * Compress an image file in the browser before uploading.
+ * Resizes to a max dimension and re-encodes as JPEG, which typically
+ * reduces payload size by 80-90% without losing legibility for Claude Vision.
+ */
+function compressImage(file, maxDimension = 1280, quality = 0.72) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                let { width, height } = img;
+
+                if (width > maxDimension || height > maxDimension) {
+                    const ratio = Math.min(maxDimension / width, maxDimension / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        // Si falla la compresión, usamos el archivo original como fallback
+                        resolve(file);
+                        return;
+                    }
+                    const compressedFile = new File(
+                        [blob],
+                        file.name.replace(/\.[^.]+$/, '') + '.jpg',
+                        { type: 'image/jpeg' }
+                    );
+                    resolve(compressedFile);
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = () => resolve(file); // fallback al original si no se puede leer
+            img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(file); // fallback al original
+        reader.readAsDataURL(file);
+    });
 }
 
 /**
@@ -43,6 +93,11 @@ async function analyzeProfile() {
     // Validation
     if (!name || !headline || !about) {
         alert('Por favor completa al menos: Nombre, Headline y About');
+        return;
+    }
+    
+    if (postImages.length > 6) {
+        alert('Por favor selecciona un máximo de 6 screenshots. Esto ayuda a que el análisis sea más rápido y confiable.');
         return;
     }
     
@@ -70,6 +125,14 @@ async function analyzeProfile() {
     }, 3000);
     
     try {
+        // Comprimir imágenes en el navegador antes de subirlas (reduce timeouts y errores de red)
+        if (postImages.length > 0) {
+            document.getElementById('loadingSteps').textContent = 'Optimizando imágenes...';
+        }
+        const compressedImages = await Promise.all(
+            Array.from(postImages).map(file => compressImage(file))
+        );
+
         // Prepare FormData with images
         const formData = new FormData();
         formData.append('name', name);
@@ -84,15 +147,22 @@ async function analyzeProfile() {
         formData.append('hasHeader', hasHeader);
         formData.append('recentPosts', recentPosts || '0');
         
-        // Add images
-        for (let i = 0; i < postImages.length; i++) {
-            formData.append('postImages', postImages[i]);
-        }
+        // Add compressed images
+        compressedImages.forEach(file => {
+            formData.append('postImages', file);
+        });
+        
+        // Timeout real para evitar que la UI se quede colgada indefinidamente
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 110000); // 110s
         
         const response = await fetch(`${API_BASE}/api/analyze`, {
             method: 'POST',
-            body: formData
+            body: formData,
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         clearInterval(stepInterval);
         
@@ -119,7 +189,12 @@ async function analyzeProfile() {
         clearInterval(stepInterval);
         document.getElementById('loadingSection').classList.remove('active');
         document.getElementById('landingSection').style.display = 'block';
-        alert(`Error: ${error.message}`);
+        
+        if (error.name === 'AbortError') {
+            alert('El análisis tardó demasiado y se canceló. Intenta de nuevo con menos screenshots (3-5 suele ser suficiente), o vuelve a intentarlo en unos segundos.');
+        } else {
+            alert(`Error: ${error.message}`);
+        }
         console.error('Analysis error:', error);
     }
 }
