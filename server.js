@@ -91,21 +91,27 @@ PERFIL A ANALIZAR:
 - Seguidores: ${profileData.followers}
 - LinkedIn Premium: ${profileData.hasPremium ? 'SÍ ⭐' : 'NO'}
 - Cuenta Verificada: ${profileData.isVerified ? 'SÍ ✓' : 'NO'}
+- Foto de perfil: ${profileData.hasPhoto ? 'SÍ' : 'NO'}
+- Foto de portada (Header/Banner): ${profileData.hasHeader ? 'SÍ' : 'NO'}
+- Publicaciones en los últimos 5 días: ${profileData.recentPosts}
 - Posts recientes: ${postImages.length} screenshots proporcionados
 
-BONIFICACIONES POR MÉTRICAS:
-- Seguidores: +${profileData.bonuses.followers} pts (${profileData.followers < 500 ? '<500' : profileData.followers < 2000 ? '500-2K' : profileData.followers < 10000 ? '2K-10K' : '10K+'})
-- Premium: +${profileData.bonuses.premium} pts (+3 Credibilidad, +3 SEO)
-- Verificado: +${profileData.bonuses.verified} pts (+2 Credibilidad, +2 Visual)
-- TOTAL BONUS: +${profileData.bonuses.total} pts
+BONIFICACIONES Y PENALIZACIONES POR MÉTRICAS (usa el signo exacto, pueden ser negativas):
+- Seguidores: ${profileData.bonuses.followers >= 0 ? '+' : ''}${profileData.bonuses.followers} pts (${profileData.followers < 500 ? '<500' : profileData.followers < 2000 ? '500-2K' : profileData.followers < 10000 ? '2K-10K' : '10K+'})
+- Premium: ${profileData.bonuses.premium >= 0 ? '+' : ''}${profileData.bonuses.premium} pts (+3 Credibilidad, +3 SEO)
+- Verificado: ${profileData.bonuses.verified >= 0 ? '+' : ''}${profileData.bonuses.verified} pts (+2 Credibilidad, +2 Visual)
+- Foto de perfil: ${profileData.bonuses.photo >= 0 ? '+' : ''}${profileData.bonuses.photo} pts (Identidad Visual) — ${profileData.hasPhoto ? 'SÍ tiene, bonus' : 'NO tiene, PENALIZA'}
+- Foto de portada: ${profileData.bonuses.header >= 0 ? '+' : ''}${profileData.bonuses.header} pts (Identidad Visual) — ${profileData.hasHeader ? 'SÍ tiene, bonus' : 'NO tiene, PENALIZA'}
+- Publicaciones últimos 5 días: ${profileData.bonuses.posts >= 0 ? '+' : ''}${profileData.bonuses.posts} pts (Engagement) — meta: 5 posts/5 días. Tiene ${profileData.recentPosts}, ${profileData.bonuses.posts < 0 ? 'PENALIZA por debajo de la meta' : 'cumple o supera la meta'}
+- TOTAL NETO (puede ser negativo): ${profileData.bonuses.total >= 0 ? '+' : ''}${profileData.bonuses.total} pts
 
-FRAMEWORK DE EVALUACIÓN (100 puntos base + bonuses):
+FRAMEWORK DE EVALUACIÓN (100 puntos base, ajustado por bonificaciones/penalizaciones netas):
 
-1. IDENTIDAD VISUAL (20 pts base ${profileData.isVerified ? '+ 2 pts verificado' : ''}) - Evalúa coherencia profesional
+1. IDENTIDAD VISUAL (20 pts base ${profileData.isVerified ? '+ 2 verificado' : ''} ${profileData.bonuses.photo >= 0 ? '+ ' + profileData.bonuses.photo + ' foto' : profileData.bonuses.photo + ' foto (PENALIZA)'} ${profileData.bonuses.header >= 0 ? '+ ' + profileData.bonuses.header + ' header' : profileData.bonuses.header + ' header (PENALIZA)'}) - Evalúa coherencia profesional, foto y banner
 2. PROPUESTA DE VALOR (20 pts base) - Claridad, diferenciación, CTA
-3. CREDIBILIDAD (20 pts base ${profileData.hasPremium ? '+ 3 pts premium' : ''} ${profileData.isVerified ? '+ 2 pts verificado' : ''}) - Experiencia, logros, autoridad
-4. VISIBILIDAD SEO (20 pts base ${profileData.hasPremium ? '+ 3 pts premium' : ''}) - Keywords estratégicas, optimización
-5. ENGAGEMENT (20 pts base ${profileData.bonuses.followers > 0 ? '+ ' + profileData.bonuses.followers + ' pts seguidores' : ''}) - Actividad, interacción, consistencia
+3. CREDIBILIDAD (20 pts base ${profileData.hasPremium ? '+ 3 premium' : ''} ${profileData.isVerified ? '+ 2 verificado' : ''}) - Experiencia, logros, autoridad
+4. VISIBILIDAD SEO (20 pts base ${profileData.hasPremium ? '+ 3 premium' : ''}) - Keywords estratégicas, optimización
+5. ENGAGEMENT (20 pts base ${profileData.bonuses.followers >= 0 ? '+ ' + profileData.bonuses.followers + ' seguidores' : ''} ${profileData.bonuses.posts >= 0 ? '+ ' + profileData.bonuses.posts + ' frecuencia posts' : profileData.bonuses.posts + ' frecuencia posts (PENALIZA)'}) - Actividad, interacción, consistencia
 
 ${postImages.length > 0 ? `
 ANÁLISIS DE POSTS (CRÍTICO):
@@ -116,23 +122,23 @@ ANÁLISIS DE POSTS (CRÍTICO):
 - Evalúa frecuencia de publicación
 - Identifica qué posts generan más engagement
 ` : `
-NOTA: No hay screenshots de posts. Evalúa engagement basado en la completitud del perfil y asume engagement bajo (máx 12/20).
+NOTA: No hay screenshots de posts. Evalúa engagement basado en la completitud del perfil y asume engagement bajo (máx 12/20 antes de bonus/penalización).
 `}
 
 CALIBRACIÓN IMPORTANTE:
-- Baseline mínimo: 60 puntos (perfil profesional básico completo)
-- Si publica activamente (${postImages.length}+ posts recientes): mínimo 70 puntos
+- Baseline mínimo SIN penalizaciones: 60 puntos (perfil profesional básico completo)
+- Si publica activamente (${postImages.length}+ posts recientes): mínimo 70 puntos base
 - Perfil excelente + actividad consistente: 80-95 puntos base
-- BONUSES TOTALES: +${profileData.bonuses.total} pts
-- Score máximo posible: ${100 + profileData.bonuses.total} pts
-- NUNCA dar menos de 60 en el score base si el perfil está completo
+- BONUS/PENALIZACIÓN NETA TOTAL: ${profileData.bonuses.total >= 0 ? '+' : ''}${profileData.bonuses.total} pts
+- Score final = score base + bonus neto (PUEDE bajar del baseline si hay penalizaciones por falta de foto, header o publicaciones)
+- Nunca dejes el score final por debajo de 30, incluso con todas las penalizaciones aplicadas
 
-APLICACIÓN DE BONUSES:
-- Identidad Visual: base ${profileData.isVerified ? '+ 2 pts (verificado)' : '(sin bonus)'}
+APLICACIÓN EXACTA DE BONUSES/PENALIZACIONES (aplica el signo, pueden restar):
+- Identidad Visual: base ${profileData.isVerified ? '+ 2 (verificado) ' : ''}${profileData.bonuses.photo >= 0 ? '+ ' + profileData.bonuses.photo + ' (foto)' : profileData.bonuses.photo + ' (sin foto)'} ${profileData.bonuses.header >= 0 ? '+ ' + profileData.bonuses.header + ' (header)' : profileData.bonuses.header + ' (sin header)'}
 - Propuesta de Valor: base (sin bonus)
-- Credibilidad: base ${profileData.hasPremium ? '+ 3 pts (premium)' : ''} ${profileData.isVerified ? '+ 2 pts (verificado)' : ''}
-- Visibilidad SEO: base ${profileData.hasPremium ? '+ 3 pts (premium)' : ''} ${profileData.bonuses.followers > 0 ? '+ ' + Math.floor(profileData.bonuses.followers/2) + ' pts (alcance)' : ''}
-- Engagement: base ${profileData.bonuses.followers > 0 ? '+ ' + Math.ceil(profileData.bonuses.followers/2) + ' pts (seguidores)' : ''}
+- Credibilidad: base ${profileData.hasPremium ? '+ 3 (premium) ' : ''}${profileData.isVerified ? '+ 2 (verificado)' : ''}
+- Visibilidad SEO: base ${profileData.hasPremium ? '+ 3 (premium) ' : ''}${profileData.bonuses.followers > 0 ? '+ ' + Math.floor(profileData.bonuses.followers/2) + ' (alcance)' : ''}
+- Engagement: base ${profileData.bonuses.followers > 0 ? '+ ' + Math.ceil(profileData.bonuses.followers/2) + ' (seguidores) ' : ''}${profileData.bonuses.posts >= 0 ? '+ ' + profileData.bonuses.posts + ' (frecuencia)' : profileData.bonuses.posts + ' (frecuencia insuficiente)'}
 
 RESPONDE EN FORMATO JSON ESTRICTO (sin markdown, sin backticks):
 {
@@ -227,7 +233,7 @@ IMPORTANTE PARA KEYWORDS Y HASHTAGS:
 
   // Call Claude with vision
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 6000,
     messages: [
       {
@@ -254,7 +260,7 @@ IMPORTANTE PARA KEYWORDS Y HASHTAGS:
  */
 app.post('/api/analyze', upload.array('postImages', 10), async (req, res) => {
   try {
-    const { name, headline, about, experience, skills, followers, hasPremium, isVerified } = req.body;
+    const { name, headline, about, experience, skills, followers, hasPremium, isVerified, hasPhoto, hasHeader, recentPosts } = req.body;
     const postImages = req.files || [];
     
     // Validation
@@ -268,19 +274,28 @@ app.post('/api/analyze', upload.array('postImages', 10), async (req, res) => {
     console.log('👥 Followers:', followers);
     console.log('⭐ Premium:', hasPremium === 'true');
     console.log('✓ Verified:', isVerified === 'true');
+    console.log('🖼️ Has photo:', hasPhoto === 'true');
+    console.log('🎨 Has header:', hasHeader === 'true');
+    console.log('📅 Recent posts (5d):', recentPosts);
     console.log('📸 Post images:', postImages.length);
     
     // Parse metrics
     const followersCount = parseInt(followers) || 0;
     const isPremium = hasPremium === 'true';
     const isAccountVerified = isVerified === 'true';
+    const profileHasPhoto = hasPhoto === 'true';
+    const profileHasHeader = hasHeader === 'true';
+    const recentPostsCount = parseInt(recentPosts) || 0;
     
-    // Calculate bonus points based on metrics
+    // Calculate bonus/penalty points based on metrics
     const followersBonus = calculateFollowersBonus(followersCount);
     const premiumBonus = isPremium ? 6 : 0; // +3 Credibilidad + +3 SEO
     const verifiedBonus = isAccountVerified ? 4 : 0; // +2 Credibilidad + +2 Visual
+    const photoBonus = profileHasPhoto ? 3 : -3; // +3/-3 Identidad Visual
+    const headerBonus = profileHasHeader ? 3 : -3; // +3/-3 Identidad Visual
+    const postsBonus = calculateRecentPostsBonus(recentPostsCount); // +5 a -5 Engagement
     
-    console.log('💰 Bonuses - Followers:', followersBonus, 'Premium:', premiumBonus, 'Verified:', verifiedBonus);
+    console.log('💰 Bonuses - Followers:', followersBonus, 'Premium:', premiumBonus, 'Verified:', verifiedBonus, 'Photo:', photoBonus, 'Header:', headerBonus, 'Posts:', postsBonus);
     
     // Build profile data
     const profileData = {
@@ -292,13 +307,19 @@ app.post('/api/analyze', upload.array('postImages', 10), async (req, res) => {
       followers: followersCount,
       hasPremium: isPremium,
       isVerified: isAccountVerified,
+      hasPhoto: profileHasPhoto,
+      hasHeader: profileHasHeader,
+      recentPosts: recentPostsCount,
       industry: detectIndustry(headline, about),
       photoUrl: '',
       bonuses: {
         followers: followersBonus,
         premium: premiumBonus,
         verified: verifiedBonus,
-        total: followersBonus + premiumBonus + verifiedBonus
+        photo: photoBonus,
+        header: headerBonus,
+        posts: postsBonus,
+        total: followersBonus + premiumBonus + verifiedBonus + photoBonus + headerBonus + postsBonus
       }
     };
     
@@ -340,6 +361,19 @@ function calculateFollowersBonus(followers) {
 }
 
 /**
+ * Calculate recent posts bonus/penalty (last 5 days)
+ * Target: 5 posts in 5 days = consistencia ideal
+ */
+function calculateRecentPostsBonus(postsCount) {
+  if (postsCount >= 5) return 5;   // Cumple o supera el objetivo
+  if (postsCount === 4) return 2;
+  if (postsCount === 3) return 0;
+  if (postsCount === 2) return -2;
+  if (postsCount === 1) return -4;
+  return -5; // 0 publicaciones
+}
+
+/**
  * POST /api/chat
  * Chat con IA sobre el análisis
  */
@@ -361,7 +395,7 @@ El usuario pregunta: "${message}"
 Responde de manera concisa, profesional y accionable. Si la pregunta se relaciona con el análisis del perfil, usa el contexto provisto. Si es una pregunta general sobre LinkedIn o personal branding, responde con tu expertise.`;
 
     const chatResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       messages: [
         {

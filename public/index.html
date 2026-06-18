@@ -132,6 +132,36 @@
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
+
+                            <div class="metric-input-card">
+                                <div class="metric-icon-large">🖼️</div>
+                                <label class="metric-card-label">Foto de Perfil</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="profileHasPhoto">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="metric-input-card">
+                                <div class="metric-icon-large">🎨</div>
+                                <label class="metric-card-label">Foto de Portada (Header)</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="profileHasHeader">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="metric-input-card">
+                                <div class="metric-icon-large">📅</div>
+                                <label class="metric-card-label">Publicaciones (últimos 5 días)</label>
+                                <input 
+                                    type="number" 
+                                    class="metric-number-input" 
+                                    placeholder="0"
+                                    id="profileRecentPosts"
+                                    min="0"
+                                >
+                            </div>
                         </div>
                     </div>
 
@@ -225,6 +255,7 @@
                         <div class="score-description" id="scoreDescription">
                             Analizando tu perfil...
                         </div>
+                        <div class="metrics-applied" id="metricsApplied"></div>
                     </div>
                 </div>
 

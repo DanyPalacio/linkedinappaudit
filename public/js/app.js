@@ -35,6 +35,9 @@ async function analyzeProfile() {
     const followers = document.getElementById('profileFollowers').value.trim();
     const hasPremium = document.getElementById('profilePremium').checked;
     const isVerified = document.getElementById('profileVerified').checked;
+    const hasPhoto = document.getElementById('profileHasPhoto').checked;
+    const hasHeader = document.getElementById('profileHasHeader').checked;
+    const recentPosts = document.getElementById('profileRecentPosts').value.trim();
     const postImages = document.getElementById('postImages').files;
     
     // Validation
@@ -77,6 +80,9 @@ async function analyzeProfile() {
         formData.append('followers', followers || '0');
         formData.append('hasPremium', hasPremium);
         formData.append('isVerified', isVerified);
+        formData.append('hasPhoto', hasPhoto);
+        formData.append('hasHeader', hasHeader);
+        formData.append('recentPosts', recentPosts || '0');
         
         // Add images
         for (let i = 0; i < postImages.length; i++) {
@@ -155,6 +161,7 @@ function renderResults(data) {
     // Draw charts
     drawScoreCircle(score);
     renderKeywordsAndHashtags(analysis);
+    renderMetricsApplied(profile);
     
     // Metrics grid
     renderMetrics(analysis.analisisDetallado);
@@ -262,6 +269,56 @@ function renderKeywordsAndHashtags(analysis) {
     } else {
         hashtagsEl.innerHTML = '<p style="color: var(--color-text-secondary);">No hay hashtags recomendados</p>';
     }
+}
+
+/**
+ * Render metrics applied badges (transparency on score impact)
+ */
+function renderMetricsApplied(profile) {
+    const container = document.getElementById('metricsApplied');
+    if (!container || !profile.bonuses) return;
+
+    const b = profile.bonuses;
+    const badges = [];
+
+    const fmt = (pts) => (pts >= 0 ? `+${pts}` : `${pts}`);
+
+    badges.push({
+        label: `👥 ${profile.followers} seguidores`,
+        pts: b.followers,
+        type: b.followers > 0 ? 'positive' : 'neutral'
+    });
+    badges.push({
+        label: `⭐ Premium`,
+        pts: b.premium,
+        type: b.premium > 0 ? 'positive' : 'neutral'
+    });
+    badges.push({
+        label: `✓ Verificado`,
+        pts: b.verified,
+        type: b.verified > 0 ? 'positive' : 'neutral'
+    });
+    badges.push({
+        label: `🖼️ Foto de perfil`,
+        pts: b.photo,
+        type: b.photo > 0 ? 'positive' : 'negative'
+    });
+    badges.push({
+        label: `🎨 Foto de portada`,
+        pts: b.header,
+        type: b.header > 0 ? 'positive' : 'negative'
+    });
+    badges.push({
+        label: `📅 ${profile.recentPosts} posts/5d`,
+        pts: b.posts,
+        type: b.posts > 0 ? 'positive' : (b.posts < 0 ? 'negative' : 'neutral')
+    });
+
+    container.innerHTML = badges.map(badge => `
+        <span class="metric-badge ${badge.type}">
+            ${badge.label} <strong>${fmt(badge.pts)}</strong>
+        </span>
+    `).join('');
 }
 
 /**
@@ -680,8 +737,22 @@ function resetApp() {
     document.getElementById('resultsSection').classList.remove('active');
     document.getElementById('loadingSection').classList.remove('active');
     document.getElementById('landingSection').style.display = 'block';
-    document.getElementById('profileUrl').value = '';
     document.getElementById('resetBtn').style.display = 'none';
+    
+    // Clear form fields
+    document.getElementById('profileName').value = '';
+    document.getElementById('profileHeadline').value = '';
+    document.getElementById('profileAbout').value = '';
+    document.getElementById('profileExperience').value = '';
+    document.getElementById('profileSkills').value = '';
+    document.getElementById('profileFollowers').value = '';
+    document.getElementById('profilePremium').checked = false;
+    document.getElementById('profileVerified').checked = false;
+    document.getElementById('profileHasPhoto').checked = false;
+    document.getElementById('profileHasHeader').checked = false;
+    document.getElementById('profileRecentPosts').value = '';
+    document.getElementById('postImages').value = '';
+    updateFileCount();
     
     // Reset to first tab
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -713,9 +784,3 @@ function switchTab(tabName) {
     document.getElementById('tab-' + tabName).classList.add('active');
 }
 
-// Allow Enter key on profile URL input
-document.getElementById('profileUrl')?.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        analyzeProfile();
-    }
-});
